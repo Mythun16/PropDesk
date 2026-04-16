@@ -58,8 +58,14 @@ export function statusBadgeClass(status) {
 export function imageUrl(filename) {
   if (!filename) return ''
   if (filename.startsWith('http')) return filename
-  return `http://localhost:8000/uploads/${filename}`
+
+  // Gets the API URL (e.g. https://propdesk.onrender.com/api) and strips '/api'
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+  const baseUrl = apiUrl.replace(/\/api\/?$/, '');
+
+  return `${baseUrl}/uploads/${filename}`;
 }
+
 
 /** Get current user from localStorage */
 export function getCurrentUser() {
