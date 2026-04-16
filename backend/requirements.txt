@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+motor==3.3.1
+beanie==1.22.6
+pymongo==4.5.0
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==3.2.0
+python-multipart
+python-dotenv
+pydantic[email]
+google-auth
+google-auth-httplib2
+httpx
+requests
