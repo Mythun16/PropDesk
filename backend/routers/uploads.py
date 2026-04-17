@@ -18,7 +18,14 @@ async def upload_images(files: List[UploadFile] = File(...)):
         # This will automatically read from the CLOUDINARY_URL in your .env
         upload_result = cloudinary.uploader.upload(contents)
         
-        # Cloudinary provides a 'secure_url' which is the permanent HTTPS web link
-        saved.append(upload_result["secure_url"])
+        # Build an optimized URL (f_auto, q_auto) using the public ID
+        import cloudinary.utils
+        optimized_url, _ = cloudinary.utils.cloudinary_url(
+            upload_result["public_id"],
+            fetch_format="auto",
+            quality="auto",
+            secure=True
+        )
+        saved.append(optimized_url)
 
     return {"filenames": saved}
