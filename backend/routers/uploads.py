@@ -1,13 +1,8 @@
-import os
-import uuid
 from typing import List
-
+import cloudinary
+import cloudinary.uploader
 from fastapi import APIRouter, UploadFile, File, HTTPException
-
 router = APIRouter(prefix="/api/uploads", tags=["Uploads"])
-
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @router.post("/images")
@@ -17,12 +12,13 @@ async def upload_images(files: List[UploadFile] = File(...)):
 
     saved: List[str] = []
     for f in files:
-        ext = os.path.splitext(f.filename or "img.jpg")[1] or ".jpg"
-        filename = f"{uuid.uuid4().hex}{ext}"
-        filepath = os.path.join(UPLOAD_DIR, filename)
         contents = await f.read()
-        with open(filepath, "wb") as out:
-            out.write(contents)
-        saved.append(filename)
+        
+        # Stream the image file contents directly to Cloudinary
+        # This will automatically read from the CLOUDINARY_URL in your .env
+        upload_result = cloudinary.uploader.upload(contents)
+        
+        # Cloudinary provides a 'secure_url' which is the permanent HTTPS web link
+        saved.append(upload_result["secure_url"])
 
     return {"filenames": saved}
