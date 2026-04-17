@@ -48,8 +48,8 @@ async def create_listing(body: ListingCreate, user: User = Depends(require_compa
     if user.role not in ("agent", "admin"):
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    count = await Listing.find(Listing.company_id == user.company_id).count()
-    set_no = count + 1
+    highest_listing = await Listing.find(Listing.company_id == user.company_id).sort("-set_no").first_or_none()
+    set_no = (highest_listing.set_no + 1) if highest_listing else 1
 
     listing = Listing(
         set_no=set_no,
