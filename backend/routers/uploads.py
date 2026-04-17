@@ -15,13 +15,11 @@ async def upload_images(files: List[UploadFile] = File(...)):
         # Stream the file directly from FastAPI to Cloudinary
         upload_result = cloudinary.uploader.upload(f.file)
         
-        # Build an optimized URL (f_auto, q_auto) using the public ID
-        import cloudinary.utils
-        optimized_url, _ = cloudinary.utils.cloudinary_url(
-            upload_result["public_id"],
+        # Generate the f_auto, q_auto optimized URL safely
+        optimized_url = cloudinary.CloudinaryImage(upload_result["public_id"]).build_url(
+            secure=True,
             fetch_format="auto",
-            quality="auto",
-            secure=True
+            quality="auto"
         )
         saved.append(optimized_url)
 
