@@ -12,11 +12,8 @@ async def upload_images(files: List[UploadFile] = File(...)):
 
     saved: List[str] = []
     for f in files:
-        contents = await f.read()
-        
-        # Stream the image file contents directly to Cloudinary
-        # This will automatically read from the CLOUDINARY_URL in your .env
-        upload_result = cloudinary.uploader.upload(contents)
+        # Stream the file directly from FastAPI to Cloudinary
+        upload_result = cloudinary.uploader.upload(f.file)
         
         # Build an optimized URL (f_auto, q_auto) using the public ID
         import cloudinary.utils
