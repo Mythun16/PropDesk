@@ -13,6 +13,8 @@ from models import User
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
+VALID_ROLES = {"admin", "agent", "telecaller"}
+
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
@@ -66,6 +68,18 @@ async def require_admin(user: User = Depends(get_current_user)) -> User:
 async def require_agent(user: User = Depends(get_current_user)) -> User:
     if user.role != "agent":
         raise HTTPException(status_code=403, detail="Agent access required")
+    return user
+
+
+async def require_telecaller(user: User = Depends(get_current_user)) -> User:
+    if user.role != "telecaller":
+        raise HTTPException(status_code=403, detail="Telecaller access required")
+    return user
+
+
+async def require_agent_or_telecaller(user: User = Depends(get_current_user)) -> User:
+    if user.role not in ("agent", "telecaller"):
+        raise HTTPException(status_code=403, detail="Agent or telecaller access required")
     return user
 
 

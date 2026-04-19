@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { formatDate, getInitials } from '../../utils/helpers'
-import { UserPlus, ShieldOff, ShieldCheck, Mail, UserCheck } from 'lucide-react'
+import { UserPlus, ShieldOff, ShieldCheck, UserSearch, UserCheck } from 'lucide-react'
 
 export default function AgentPerformance() {
   const [agents, setAgents] = useState([])
@@ -58,9 +58,8 @@ export default function AgentPerformance() {
     setInviteLoading(true)
     try {
       const res = await api.post('/agents/invite-by-email', { email: inviteEmail.trim() })
-      toast.success(`${res.data.full_name} has been added to your company!`)
+      toast.success(`Invite sent to ${res.data.agent_name}!`)
       setShowModal(false)
-      fetchAgents()
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to invite agent')
     } finally {
@@ -94,7 +93,7 @@ export default function AgentPerformance() {
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <input className="form-input" style={{ width: 200 }} placeholder="Search agents..." value={search} onChange={e => setSearch(e.target.value)} />
           <button className="btn-secondary" onClick={() => openModal('invite')} style={{ whiteSpace: 'nowrap' }}>
-            <Mail size={15} /> Invite Existing
+            <UserSearch size={15} /> Find Agent
           </button>
           <button className="btn-primary" onClick={() => openModal('create')} style={{ whiteSpace: 'nowrap' }}>
             <UserPlus size={16} /> Add New
@@ -110,7 +109,7 @@ export default function AgentPerformance() {
             Share your join code (Settings → Agent Join Code) with agents, or use "Invite Existing" to add agents already registered.
           </p>
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '0.75rem' }}>
-            <button className="btn-secondary" onClick={() => openModal('invite')}><Mail size={15} /> Invite by Email</button>
+            <button className="btn-secondary" onClick={() => openModal('invite')}><UserSearch size={15} /> Find Agent</button>
             <button className="btn-primary" onClick={() => openModal('create')}><UserPlus size={16} /> Create New Agent</button>
           </div>
         </div>
@@ -134,7 +133,7 @@ export default function AgentPerformance() {
                         fontSize: '0.7rem', fontWeight: 700,
                         background: a.avatar_url ? 'transparent' : 'var(--filter-active-bg)', color: 'var(--heading)',
                       }}>
-                        {a.avatar_url ? <img src={a.avatar_url} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : getInitials(a.full_name)}
+                        {a.avatar_url ? <img src={a.avatar_url} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} referrerPolicy="no-referrer" /> : getInitials(a.full_name)}
                       </div>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{a.full_name}</div>
@@ -203,8 +202,8 @@ export default function AgentPerformance() {
                   marginBottom: '-1px',
                 }}
               >
-                <Mail size={14} style={{ marginRight: '0.35rem', verticalAlign: 'middle' }} />
-                Invite by Email
+                <UserSearch size={14} style={{ marginRight: '0.35rem', verticalAlign: 'middle' }} />
+                Find Agent
               </button>
             </div>
 
@@ -234,9 +233,9 @@ export default function AgentPerformance() {
               </>
             ) : (
               <>
-                <h3 className="modal-title">Invite Existing Agent</h3>
+                <h3 className="modal-title">Find & Invite Agent</h3>
                 <p style={{ fontSize: '0.83rem', color: 'var(--muted-text)', marginBottom: '1rem' }}>
-                  If an agent already has a PropDesk account (even under a different company), enter their email to move them into your team.
+                  If an agent already has a PropDesk account (even under a different company), enter their email to send them an invite — they must accept before being added to your team.
                 </p>
                 <div className="form-group">
                   <label className="form-label">Agent's Email *</label>
@@ -252,7 +251,7 @@ export default function AgentPerformance() {
                 <div className="modal-actions">
                   <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
                   <button className="btn-primary" onClick={handleInvite} disabled={inviteLoading}>
-                    {inviteLoading ? 'Adding...' : 'Add to My Team'}
+                    {inviteLoading ? 'Sending...' : 'Send Invite'}
                   </button>
                 </div>
               </>

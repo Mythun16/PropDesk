@@ -1,6 +1,19 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import Sidebar from './Sidebar'
+
+function defaultDashboard(role) {
+  if (role === 'admin') return '/admin/dashboard'
+  if (role === 'telecaller') return '/telecaller/dashboard'
+  return '/agent/dashboard'
+}
+
+function isValidLastPageForRole(role, path) {
+  if (!path || path === '/login' || path === '/unauthorized' || path === '/onboarding' || path === '/pending') return false
+  if (role === 'admin') return path.startsWith('/admin/')
+  if (role === 'telecaller') return path.startsWith('/telecaller/')
+  if (role === 'agent') return path.startsWith('/agent/')
+  return false
+}
 
 export function ProtectedRoute({ allowedRoles }) {
   const { user, loading } = useAuth()
@@ -13,7 +26,6 @@ export function ProtectedRoute({ allowedRoles }) {
     return <Navigate to="/login" replace />
   }
 
-  // First-time users always go through onboarding.
   if (user.is_new_user === true || user.role === 'guest') {
     return <Navigate to="/onboarding" replace />
   }
@@ -31,19 +43,20 @@ export function ProtectedRoute({ allowedRoles }) {
 
 export function PublicRoute() {
   const { user, loading } = useAuth()
-  
+
   if (loading) {
     return <div className="loading-screen">Loading...</div>
   }
 
   if (user) {
-    // New users should be onboarded first.
     if (user.is_new_user === true || user.role === 'guest') return <Navigate to="/onboarding" replace />
-    // If company isn't set, keep non-admins in setup.
     if (!user.company_id && user.role !== 'admin') return <Navigate to="/pending" replace />
-    // Returning users resume where they left off.
-    if (user.last_page) return <Navigate to={user.last_page} replace />
-    return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/agent/dashboard'} replace />
+    
+    // Only redirect to last_page if it is a valid route for this user's role
+    if (user.last_page && isValidLastPageForRole(user.role, user.last_page)) {
+      return <Navigate to={user.last_page} replace />
+    }
+    return <Navigate to={defaultDashboard(user.role)} replace />
   }
 
   return <Outlet />

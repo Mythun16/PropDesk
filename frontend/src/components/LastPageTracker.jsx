@@ -14,7 +14,7 @@ export default function LastPageTracker() {
     if (user.is_new_user === true || user.role === 'guest') return;
 
     const path = location.pathname;
-    if (!path.startsWith('/agent') && !path.startsWith('/admin')) return;
+    if (!path.startsWith('/agent') && !path.startsWith('/admin') && !path.startsWith('/telecaller')) return;
 
     // Avoid spamming the backend on re-renders.
     if (lastTrackedPathRef.current === path) return;

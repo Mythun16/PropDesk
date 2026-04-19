@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, EmailStr
 from beanie import PydanticObjectId
 
 
-# ── Auth ──────────────────────────────────────────────────────────────
+# ── Auth ───────────────────────────────────────────────────────────────
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
@@ -14,18 +15,19 @@ class RegisterRequest(BaseModel):
     full_name: str
     email: EmailStr
     password: str
-    role: str  # "admin" or "agent"
+    role: str  # "admin" | "agent" | "telecaller"
 
 
 class GoogleAuthRequest(BaseModel):
     credential: str
-    role: str  # "admin" or "agent"
+    role: str  # "admin" | "agent"
 
 
 class CompleteOnboardingRequest(BaseModel):
-    role: Optional[str] = None          # optional for legacy guest onboarding
-    company_name: Optional[str] = None  # admins: create a new company
-    join_code: Optional[str] = None     # agents: join an existing company
+    role: Optional[str] = None
+    company_name: Optional[str] = None  # admins: create agency
+    join_code: Optional[str] = None     # agents/telecallers: join agency
+    phone: Optional[str] = None          # collected on last onboarding step
 
 
 class TokenResponse(BaseModel):
@@ -41,16 +43,42 @@ class TrackLastPageRequest(BaseModel):
     last_page: str
 
 
-# ── User / Agent ──────────────────────────────────────────────────────
+# ── Agency (was Company) ───────────────────────────────────────────────
+
+class AgencyUpdate(BaseModel):
+    name: Optional[str] = None
+    owner_name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    city: Optional[str] = None
+    whatsapp_number: Optional[str] = None
+    lead_dispatch_time: Optional[str] = None  # e.g. "09:00"
+
+
+# Backward-compat alias
+CompanyUpdate = AgencyUpdate
+
+
+# ── Agent / User ───────────────────────────────────────────────────────
+
 class CreateAgentRequest(BaseModel):
     full_name: str
     email: EmailStr
     phone: Optional[str] = None
     password: str
+    role: str = "agent"              # agent | telecaller
+    language: str = "en"            # en | ta | hi
 
 
 class AssignCompanyRequest(BaseModel):
     company_id: str
+
+
+class AgentProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    language: Optional[str] = None           # en | ta | hi
+    whatsapp_opted_in: Optional[bool] = None
 
 
 class UserOut(BaseModel):
@@ -61,6 +89,8 @@ class UserOut(BaseModel):
     avatar_url: Optional[str] = None
     role: str
     company_id: Optional[str] = None
+    language: str = "en"
+    whatsapp_opted_in: bool = False
     is_new_user: bool
     last_page: str
     last_login: Optional[datetime] = None
@@ -69,39 +99,89 @@ class UserOut(BaseModel):
     created_at: datetime
 
 
-# ── Listing ───────────────────────────────────────────────────────────
-class ListingCreate(BaseModel):
-    location: str
-    district: str
-    total_area_sqft: float
-    price_per_sqft: float
-    total_property_value: float
-    property_type: str
-    dimensions: str
-    open_sides: int
-    construction_done: str
-    facing: str
-    boundary_wall: bool
-    floors_allowed: int
-    images: List[str] = []
-    description: Optional[str] = None
+# ── Location sub-schema ────────────────────────────────────────────────
+
+class LocationDetailSchema(BaseModel):
+    city: str
+    locality: Optional[str] = None
+    pincode: Optional[str] = None
+    coordinates: Optional[Dict[str, Any]] = None  # GeoJSON Point
 
 
-class ListingUpdate(BaseModel):
+# ── Property (was Listing) ─────────────────────────────────────────────
+
+class PropertyCreate(BaseModel):
+    # Required
+    property_type: str                    # house | plot
+    transaction_type: str                 # sell | rent | lease
+
+    # Either title or legacy location string
+    title: Optional[str] = None
+
+    # New structured location
+    location_detail: Optional[LocationDetailSchema] = None
+
+    # Legacy flat location (still accepted)
     location: Optional[str] = None
     district: Optional[str] = None
+
+    description: Optional[str] = None
+
+    # New single price
+    price: Optional[float] = None
+    is_negotiable: bool = False
+
+    facing: Optional[str] = None
+
+    # New flexible details
+    details: Optional[Dict[str, Any]] = None
+
+    # Legacy detail fields (still accepted)
     total_area_sqft: Optional[float] = None
     price_per_sqft: Optional[float] = None
     total_property_value: Optional[float] = None
-    property_type: Optional[str] = None
     dimensions: Optional[str] = None
     open_sides: Optional[int] = None
     construction_done: Optional[str] = None
-    facing: Optional[str] = None
     boundary_wall: Optional[bool] = None
     floors_allowed: Optional[int] = None
+
+    # Photos — accept either name
+    photos: Optional[List[str]] = None
     images: Optional[List[str]] = None
+
+    nearby_amenities: Optional[Dict[str, Any]] = None
+
+
+class PropertyUpdate(BaseModel):
+    property_type: Optional[str] = None
+    transaction_type: Optional[str] = None
+    title: Optional[str] = None
+    location_detail: Optional[LocationDetailSchema] = None
+    location: Optional[str] = None
+    district: Optional[str] = None
     description: Optional[str] = None
+    price: Optional[float] = None
+    is_negotiable: Optional[bool] = None
+    facing: Optional[str] = None
+    details: Optional[Dict[str, Any]] = None
+    total_area_sqft: Optional[float] = None
+    price_per_sqft: Optional[float] = None
+    total_property_value: Optional[float] = None
+    dimensions: Optional[str] = None
+    open_sides: Optional[int] = None
+    construction_done: Optional[str] = None
+    boundary_wall: Optional[bool] = None
+    floors_allowed: Optional[int] = None
+    photos: Optional[List[str]] = None
+    images: Optional[List[str]] = None
+    nearby_amenities: Optional[Dict[str, Any]] = None
+    status: Optional[str] = None
+
+
+# Backward-compat aliases
+ListingCreate = PropertyCreate
+ListingUpdate = PropertyUpdate
 
 
 class CommitRequest(BaseModel):
@@ -110,27 +190,71 @@ class CommitRequest(BaseModel):
     committed_date: Optional[datetime] = None
 
 
-# ── Lead ──────────────────────────────────────────────────────────────
-class LeadCreate(BaseModel):
-    client_name: str
-    client_phone: str
-    client_email: Optional[str] = None
-    preferred_location: str
-    preferred_district: str
-    preferred_property_type: str
-    budget_min: float
-    budget_max: float
+class AssignAgentRequest(BaseModel):
+    agent_id: str
+    status: str = "available"
+
+
+# ── Lead ───────────────────────────────────────────────────────────────
+
+class ClientInfoSchema(BaseModel):
+    name: str
+    phone: str
+    email: Optional[str] = None
+
+
+class RequirementsSchema(BaseModel):
+    """Flexible requirements bag — all fields optional."""
+    preferred_location: Optional[str] = None
+    preferred_district: Optional[str] = None
+    preferred_property_type: Optional[str] = None   # house | plot | Any
+    transaction_type: Optional[str] = None           # sell | rent | lease
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
     area_min_sqft: Optional[float] = None
     area_max_sqft: Optional[float] = None
     facing_preference: Optional[str] = None
     open_sides_needed: Optional[int] = None
-    notes: Optional[str] = None
+    extra: Optional[Dict[str, Any]] = None
 
 
-class LeadUpdate(BaseModel):
+class LeadCreate(BaseModel):
+    # New nested client — preferred
+    client: Optional[ClientInfoSchema] = None
+
+    # Old flat client fields — still accepted for backward compat
     client_name: Optional[str] = None
     client_phone: Optional[str] = None
     client_email: Optional[str] = None
+
+    source: Optional[str] = None  # 99acres|magicbricks|nobroker|olx|walk_in|agent_upload|whatsapp
+
+    # New nested requirements — preferred
+    requirements: Optional[RequirementsSchema] = None
+
+    # Old flat requirement fields — still accepted
+    preferred_location: Optional[str] = None
+    preferred_district: Optional[str] = None
+    preferred_property_type: Optional[str] = None
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
+    area_min_sqft: Optional[float] = None
+    area_max_sqft: Optional[float] = None
+    facing_preference: Optional[str] = None
+    open_sides_needed: Optional[int] = None
+
+    notes: Optional[str] = None
+    follow_up_at: Optional[datetime] = None
+    property_id: Optional[str] = None
+
+
+class LeadUpdate(BaseModel):
+    client: Optional[ClientInfoSchema] = None
+    client_name: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_email: Optional[str] = None
+    source: Optional[str] = None
+    requirements: Optional[RequirementsSchema] = None
     preferred_location: Optional[str] = None
     preferred_district: Optional[str] = None
     preferred_property_type: Optional[str] = None
@@ -142,9 +266,41 @@ class LeadUpdate(BaseModel):
     open_sides_needed: Optional[int] = None
     notes: Optional[str] = None
     status: Optional[str] = None
+    telecaller_verified: Optional[bool] = None
+    follow_up_at: Optional[datetime] = None
+    # Accept both old and new property link names
     linked_listing_id: Optional[str] = None
+    property_id: Optional[str] = None
 
 
-# ── Company ───────────────────────────────────────────────────────────
-class CompanyUpdate(BaseModel):
-    name: str
+# ── Portal Posts ───────────────────────────────────────────────────────
+
+class PortalPostCreate(BaseModel):
+    property_id: str
+    portal: str  # 99acres | magicbricks | nobroker | olx
+
+
+class PortalPostUpdate(BaseModel):
+    portal_listing_id: Optional[str] = None
+    portal_listing_url: Optional[str] = None
+    status: Optional[str] = None   # pending | posted | failed | expired
+    error_log: Optional[str] = None
+
+
+# ── WhatsApp Dispatch ──────────────────────────────────────────────────
+
+class WhatsappDispatchCreate(BaseModel):
+    agent_id: str
+    type: str           # lead_digest | follow_up_reminder | deal_update
+    lead_ids: List[str] = []
+
+
+class WhatsappStatusUpdate(BaseModel):
+    status: str  # sent | delivered | failed
+
+
+# ── Matching Session ───────────────────────────────────────────────────
+
+class MatchingSessionCreate(BaseModel):
+    lead_id: str
+    requirements: Optional[Dict[str, Any]] = None  # override lead's requirements

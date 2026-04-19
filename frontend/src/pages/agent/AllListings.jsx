@@ -61,8 +61,10 @@ export default function AllListings({ adminView = false }) {
             <label className="form-label" style={{ fontSize: '0.7rem' }}>Property Type</label>
             <select className="form-select" value={filters.property_type} onChange={e => setFilter('property_type', e.target.value)}>
               <option value="">All</option>
-              <option value="Residential">Residential</option>
-              <option value="Commercial">Commercial</option>
+              <option value="house">House</option>
+              <option value="plot">Plot</option>
+              <option value="Residential">Residential (legacy)</option>
+              <option value="Commercial">Commercial (legacy)</option>
             </select>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
@@ -117,8 +119,10 @@ export default function AllListings({ adminView = false }) {
             <select className="form-select" value={filters.status} onChange={e => setFilter('status', e.target.value)}>
               <option value="">All</option>
               <option value="available">Available</option>
-              <option value="committed">Committed</option>
-              <option value="closed">Closed</option>
+              <option value="in_discussion">In Discussion</option>
+              <option value="negotiating">Negotiating</option>
+              <option value="deal_closed">Deal Closed</option>
+              <option value="withdrawn">Withdrawn</option>
             </select>
           </div>
         </div>
@@ -127,7 +131,7 @@ export default function AllListings({ adminView = false }) {
             <Search size={16} /> Search
           </button>
           <button className="btn-secondary" onClick={handleClear}><X size={16} /> Clear All</button>
-          <span className="result-count">{listings.length} plots found</span>
+          <span className="result-count">{listings.length} properties found</span>
         </div>
       </div>
 
@@ -136,7 +140,7 @@ export default function AllListings({ adminView = false }) {
         <div className="listings-grid">
           {[1,2,3,4,5,6].map(i => <div key={i} className="skeleton" style={{ height: 350 }} />)}
         </div>
-      ) : listings.length === 0 ? (
+      ) : (Array.isArray(listings) && listings.length === 0) ? (
         <div className="empty-state">
           <Search size={48} />
           <p>No listings found matching your filters.</p>
@@ -144,7 +148,7 @@ export default function AllListings({ adminView = false }) {
         </div>
       ) : (
         <div className="listings-grid">
-          {listings.map(l => (
+          {Array.isArray(listings) && listings.map(l => (
             <ListingCard
               key={l.id}
               listing={l}

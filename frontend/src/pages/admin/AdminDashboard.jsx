@@ -60,12 +60,12 @@ export default function AdminDashboard() {
           <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--stat-available)' }}>{data.listings_by_status.available}</div></div>
         </div>
         <div className="stat-card" style={{ borderTopColor: 'var(--stat-committed)' }}>
-          <div><div style={{ fontSize: '0.75rem', color: 'var(--muted-text)', fontWeight: 600, textTransform: 'uppercase' }}>Committed</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--stat-committed)' }}>{data.listings_by_status.committed}</div></div>
+          <div><div style={{ fontSize: '0.75rem', color: 'var(--muted-text)', fontWeight: 600, textTransform: 'uppercase' }}>In Discussion</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--stat-committed)' }}>{data.listings_by_status.in_discussion}</div></div>
         </div>
         <div className="stat-card" style={{ borderTopColor: 'var(--stat-closed)' }}>
-          <div><div style={{ fontSize: '0.75rem', color: 'var(--muted-text)', fontWeight: 600, textTransform: 'uppercase' }}>Closed</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--stat-closed)' }}>{data.listings_by_status.closed}</div></div>
+          <div><div style={{ fontSize: '0.75rem', color: 'var(--muted-text)', fontWeight: 600, textTransform: 'uppercase' }}>Deal Closed</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--stat-closed)' }}>{data.listings_by_status.deal_closed}</div></div>
         </div>
         <div className="stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

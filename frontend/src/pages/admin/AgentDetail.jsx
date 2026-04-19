@@ -82,9 +82,10 @@ export default function AgentDetail() {
             <tbody>
               {leads.map(ld => (
                 <tr key={ld.id}>
-                  <td style={{ fontWeight: 600 }}>{ld.client_name}</td>
-                  <td>{ld.client_phone}</td><td>{ld.preferred_location}, {ld.preferred_district}</td>
-                  <td>{formatIndianPrice(ld.budget_min)} – {formatIndianPrice(ld.budget_max)}</td>
+                  <td style={{ fontWeight: 600 }}>{ld.client?.name || ld.client_name}</td>
+                  <td>{ld.client?.phone || ld.client_phone}</td>
+                  <td>{ld.preferred_location || ld.requirements?.preferred_location}{(ld.preferred_district || ld.requirements?.preferred_district) ? `, ${ld.preferred_district || ld.requirements?.preferred_district}` : ''}</td>
+                  <td>{formatIndianPrice(ld.budget_min || ld.requirements?.budget_min)} – {formatIndianPrice(ld.budget_max || ld.requirements?.budget_max)}</td>
                   <td><span className={statusBadgeClass(ld.status)}>{ld.status}</span></td>
                   <td style={{ fontSize: '0.8rem', color: 'var(--muted-text)' }}>{formatDate(ld.created_at)}</td>
                 </tr>

@@ -6,13 +6,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { Building2, UserCircle, Shield, Hash } from 'lucide-react';
 
 export default function OnboardingPage() {
-  const { user, login, loading: authLoading } = useAuth();
+  const { user, login, logout, loading: authLoading } = useAuth();
   const nav = useNavigate();
 
   const [step, setStep] = useState(0);
   const [role, setRole] = useState('');         // legacy guest onboarding only
   const [companyName, setCompanyName] = useState('');
   const [joinCode, setJoinCode] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (authLoading) return <div className="loading-screen">Loading...</div>;
@@ -29,24 +30,29 @@ export default function OnboardingPage() {
   const isAdmin = effectiveRole === 'admin';
   const companyRequired = user.company_id === null;
 
-  const handleComplete = async () => {
+  const handleComplete = async (skipCode = false) => {
     if (!effectiveRole) return toast.error('Please select a role');
-    if (companyRequired) {
+    if (!skipCode && companyRequired) {
       if (isAdmin && !companyName.trim()) return toast.error('Please enter a company name');
-      if (!isAdmin && !joinCode.trim()) return toast.error('Please enter your company join code');
     }
 
     setLoading(true);
     try {
       const payload = { role: effectiveRole };
+      if (phone.trim()) payload.phone = phone.trim();
       if (companyRequired) {
         if (isAdmin) payload.company_name = companyName.trim();
-        else payload.join_code = joinCode.trim().toUpperCase();
+        else if (!skipCode && joinCode.trim()) payload.join_code = joinCode.trim().toUpperCase();
       }
       const res = await api.post('/auth/complete-onboarding', payload);
-      toast.success('Setup complete!');
       login(res.data.token, res.data.user);
-      nav(res.data.last_page || (isAdmin ? '/admin/dashboard' : '/agent/dashboard'));
+      if (!res.data.user?.company_id) {
+        toast('Account ready! Enter your join code in Settings to connect to your team.', { icon: 'ℹ️' });
+        nav('/agent/settings', { replace: true });
+      } else {
+        toast.success('Setup complete!');
+        nav(res.data.last_page || (isAdmin ? '/admin/dashboard' : '/agent/dashboard'), { replace: true });
+      }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to complete setup');
     } finally {
@@ -104,7 +110,7 @@ export default function OnboardingPage() {
           <>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>Step {step + 1} of 3</div>
-              <button type="button" className="btn-secondary" style={{ padding: '0.35rem 0.5rem' }} onClick={() => nav('/login')} disabled={loading}>Exit</button>
+              <button type="button" className="btn-secondary" style={{ padding: '0.35rem 0.5rem' }} onClick={() => { logout(); nav('/login', { replace: true }) }} disabled={loading}>Exit</button>
             </div>
 
             {step === 0 && (
@@ -145,6 +151,20 @@ export default function OnboardingPage() {
             {step === 2 && (
               <div style={{ marginBottom: '1.5rem' }}>
                 <h3 style={{ fontWeight: 700, color: '#111827', marginBottom: '0.5rem' }}>Finish setup</h3>
+
+                {!isAdmin && (
+                  <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                    <label className="form-label">Phone Number</label>
+                    <input
+                      className="form-input"
+                      type="tel"
+                      placeholder="+91 9999999999"
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                )}
 
                 {companyRequired && (
                   isAdmin ? (
@@ -188,18 +208,33 @@ export default function OnboardingPage() {
                   <p style={{ color: '#6B7280', marginBottom: '1rem' }}>You're ready. Finish setup to unlock your dashboard.</p>
                 )}
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <button className="btn-secondary" style={{ flex: 1, justifyContent: 'center', padding: '0.7rem' }} type="button" onClick={() => setStep(1)} disabled={loading}>Back</button>
                   <button
                     className="btn-primary"
                     style={{ flex: 1, justifyContent: 'center', padding: '0.7rem' }}
                     type="button"
-                    onClick={handleComplete}
-                    disabled={loading || (companyRequired && isAdmin && !companyName.trim()) || (companyRequired && !isAdmin && !joinCode.trim())}
+                    onClick={() => handleComplete(false)}
+                    disabled={loading || (companyRequired && isAdmin && !companyName.trim())}
                   >
                     {loading ? 'Saving...' : 'Finish setup'}
                   </button>
                 </div>
+                {/* Skip option for agents who don't have their join code yet */}
+                {companyRequired && !isAdmin && (
+                  <button
+                    type="button"
+                    style={{
+                      width: '100%', marginTop: '0.75rem', background: 'none', border: 'none',
+                      color: '#6B7280', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline',
+                      padding: '0.25rem',
+                    }}
+                    onClick={() => handleComplete(true)}
+                    disabled={loading}
+                  >
+                    I don't have a code yet — continue without company
+                  </button>
+                )}
               </div>
             )}
           </>

@@ -30,7 +30,7 @@ export default function LoginPage() {
 
     const userRole = data.user?.role || data.role
     if (data.is_new_user === true || data.user?.is_new_user === true) {
-      return nav('/onboarding')
+      return nav('/onboarding', { replace: true })
     }
 
     if (userRole && userRole !== selectedRole) {
@@ -38,10 +38,10 @@ export default function LoginPage() {
     }
 
     if (!data.user?.company_id && userRole !== 'admin') {
-      return nav('/pending')
+      return nav('/pending', { replace: true })
     }
 
-    nav(data.last_page || (userRole === 'admin' ? '/admin/dashboard' : '/agent/dashboard'))
+    nav(data.last_page || (userRole === 'admin' ? '/admin/dashboard' : '/agent/dashboard'), { replace: true })
   }
 
   const handleLogin = async (e) => {
